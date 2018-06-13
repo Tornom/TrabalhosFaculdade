@@ -1,0 +1,271 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+
+using namespace std;
+
+int modulo(int x, int y);
+
+vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);
+
+float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas );
+
+double Calc_Dist(float x, float y);
+
+
+int main(){
+
+	ifstream file("treinoPA.txt");
+
+	int coluna = 0;
+	int linha = 0;
+	float vet;
+
+  char k;
+	string cvet;
+	string::size_type sz = 0;
+	
+	
+
+	int colTreino[240][2]; // primeira coluna col treino a linha do arquivo
+												//segunda linha o numero de colunas nessa linha
+  	int contL1 = 0; //contador para linhas no for
+	int contL2 = 0;
+	int colTeste[960][2];
+
+	vector <float> linhas;
+	vector<vector<float> > matriz;//matriz parcialmente dinamica criada
+																	//as linhas sao fixas e colunas variam
+	
+	if(file)
+	{
+		while(getline(file,cvet))   //função para obter uma linha
+		{
+
+			vector<float> aux;		//vetor aux para salvar linhas inteiras
+														//e passar para a matriz
+			for(int i = 0; i < cvet.size();i++) // for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
+			{
+					if(i == 0) 			//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
+					{
+						sz = i;
+						vet = stof(cvet.substr(sz));
+						aux.push_back(vet);						//o elemento é passado para o vetor
+					}
+					if(cvet.at(i) == ' ')   //outro elemento
+					{
+							sz = i;
+							//cout<<sz<<"|"<<endl;
+							coluna++;
+							vet = stof(cvet.substr(sz));
+							aux.push_back(vet);
+					}
+			}
+
+			colTreino[contL1][0] = contL1;
+			colTreino[contL1][1] = coluna;
+			contL1++;
+			matriz.push_back(aux);						//é passado o vetor para a Matriz
+			aux.erase(aux.begin(),aux.end());			//o vetor auz é limpo para liberar o espaço na memória
+			linha++;									//fim de um ciclo => fim da linha
+			coluna = 0;								//começa-se uma nova linha e a coluna vai à zero
+		}
+		//cout<<linha<<endl;     //240 linhas
+	}
+	
+	/*
+		tem-se a matriz de treinos
+		pegar matriz de teste
+	*/
+
+	ifstream file2("teste.txt");
+
+	coluna = 0;
+	linha = 0;
+
+	//vector <float> linhas;
+	vector<vector<float> > matriz2;//matriz parcialmente dinamica criada
+																	//as linhas sao fixas e colunas variam
+	if(file2)
+	{
+		while(getline(file2,cvet))   //função para obter uma linha
+		{
+			vector<float> aux;		//vetor aux para salvar linhas inteiras
+														//e passar para a matriz
+			for(int i = 0; i < cvet.size();i++) // for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
+			{
+					if(i == 0) 			//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
+					{
+						sz = i;
+						vet = stof(cvet.substr(sz));
+						aux.push_back(vet);						//o elemento é passado para o vetor
+					}
+					if(cvet.at(i) == ' ')   //outro elemento
+					{
+							sz = i;
+							//cout<<sz<<"|"<<endl;
+							coluna++;
+							vet = stof(cvet.substr(sz));
+							aux.push_back(vet);
+					}
+			}
+
+			colTeste[contL2][0] = contL2;
+			colTeste[contL2][1] = coluna;
+			contL2++;
+
+			matriz2.push_back(aux);						//é passado o vetor para a Matriz
+			aux.erase(aux.begin(),aux.end());			//o vetor auz é limpo para liberar o espaço na memória
+			linha++;									//fim de um ciclo => fim da linha
+			coluna = 0;								//começa-se uma nova linha e a coluna vai à zero
+		}
+		//cout<<linha<<endl;  //960 linhas
+
+	}
+
+	float resposta[matriz.size()][matriz2.size()];
+
+	float acert;
+	vector<float> respostas;
+
+	for(int p=0; p<960;p++ ){
+		respostas.push_back(p);
+		//cout<<vetorx[p]<<endl;
+	}
+
+	vector<vector<float> > distancia(matriz.size());
+
+	for(int k; k < matriz.size();k++)
+ 	{
+	 	distancia[k].resize(matriz2.size());
+ 	}
+
+ 	distancia = DTW(matriz,matriz2);
+
+ 	acert = acertividade(matriz2, respostas);
+ 	cout<<endl<<"Acertividade:"<<acert<<"%"<<endl;
+
+	return 0;
+}
+
+int modulo(int x, int y){
+  int mod;
+  if ( x>y){
+    mod = x - y;
+  }
+
+  else mod = y - x;
+
+  return mod;
+}
+
+
+
+vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float> >& mteste)
+ {
+	 		vector<vector<float> > contas(mteste.size()-1);
+			
+			double aux; //repassa os valores para a DTW
+			contas[0].resize(mtreino.size()-1);
+			for(int k = 1; k < mteste.size()-1;k++)
+			{
+				//cout<<k<<"size:"<<mtreino.size()-1<<endl;
+				contas[k].resize(mtreino.size()-1);
+			}
+			
+			
+			int i,j;
+			
+			for(i = 1;i < mteste.size()-1;i++)
+			{
+				for(j = 1;j < mtreino.size()-1;j++)
+				{
+					
+					//cout<<"  I:"<<i<<"   J:"<<j<<endl;
+					for(int l = 0;l < mteste.size()-1;l++)
+					{
+						contas[l][0] = numeric_limits<double>::infinity();
+					}
+					
+					for(int m = 0;m < mtreino.size()-1;m++)
+					{
+						contas[0][m] = numeric_limits<double>::infinity();
+					}
+					
+					
+					contas[0][0] = 0;
+					
+					for(int l = 1;l < mteste[i].size()-1;l++)
+						for(int m = 1;m < mtreino[j].size()-1;m++)
+						{
+							//vector<vector<float> > mconta(mteste[i][l].size());
+							
+							aux = Calc_Dist(mteste[i][l],mtreino[j][m]);
+							contas[i][j] = aux + min(contas[i-1][j],min(contas[i][j-1],contas[i-1][j-1]));
+						}
+					
+					
+				}
+			}
+
+			
+
+			//cout<<mteste.size()<<endl;
+
+			//for(i = 0; i < )
+
+			// percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
+			// determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
+			// o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
+			//retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
+			//de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
+/*
+			int x;
+			int y;
+/
+/
+			if(DTW[x-1][y-1] <= DTW[x-1][y] && DTW[x-1][y-1] <= DTW[x][y-1] ){
+				k= k + DTW[x-1][y-1];
+			}
+			if (DTW[x-1][y] <= DTW[x-1][y-1] && DTW[x-1][y] <= DTW[x][y-1]){
+				k = k + DTW[x-1][y]
+			}
+			else k = k + DTW[x][y-1];
+
+			*/
+
+
+			return contas;
+ }
+
+double Calc_Dist(float x, float y)
+{
+	double z = sqrt(abs((x*x)-(y*y)));
+	return z;
+}
+
+
+
+
+float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas ){
+
+		int cont=0;
+		int i;
+
+		for(i=0; i<960; i++){
+			if(mrotulos[i][0]==respostas[i]){
+				cont++;
+				cout<<".";
+			}
+		}
+		float acert=cont*100/960;
+		return acert;
+}
+
+
+	//ordenar e comparar os mais proximos da serie
