@@ -131,75 +131,58 @@ int main(){
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float> >& mteste)
  {
-	 		vector<vector<float> > contas(mteste.size()-1);
+	 		vector<vector<float> > contas(mteste.size());
 			
 			double aux; //repassa os valores para a DTW
 
-			for(int k = 0; k < mteste.size()-1;k++)
+			for(int k = 0; k < mteste.size();k++)
 			{
-				//cout<<k<<"size:"<<mtreino.size()-1<<endl;
-				contas[k].resize(mtreino.size()-1);
+				contas[k].resize(mtreino.size());
 			}
 			
 			
 			int i,j;
 			
-			for(i = 1;i < mteste.size()-1;i++)
+			for(i = 0;i < mteste.size();i++)
 			{
-				for(j = 1;j < mtreino.size()-1;j++)
+				for(j = 0;j < mtreino.size();j++)
 				{
-					
+					vector<vector<float> > mconta(mteste[i].size()-1);
+					for(int a = 0;a < mteste[i].size()-1;a++)
+					{
+						mconta[a].resize(mtreino[j].size()-1);
+					}
 					//cout<<"  I:"<<i<<"   J:"<<j<<endl;
-					for(int l = 0;l < mteste.size()-1;l++)
+					
+					for(int l = 0;l < mteste[i].size()-1;l++)
 					{
-						contas[l][0] = numeric_limits<double>::infinity();
+						mconta[l][0] = numeric_limits<double>::infinity();
 					}
 					
-					for(int m = 0;m < mtreino.size()-1;m++)
+					for(int m = 0;m < mtreino[j].size()-1;m++)
 					{
-						contas[0][m] = numeric_limits<double>::infinity();
+						mconta[0][m] = numeric_limits<double>::infinity();
 					}
 					
+					mconta[0][0] = 0;
 					
-					contas[0][0] = 0;
-					
-					for(int l = 1;l < mteste[i].size()-1;l++)
-						for(int m = 1;m < mtreino[j].size()-1;m++)
+					for(int l = 0;l < mteste[i].size()-1;l++)
+						for(int m = 0;m < mtreino[j].size()-1;m++)
 						{
-							//vector<vector<float> > mconta(mteste[i][l].size());
-							
 							aux = Calc_Dist(mteste[i][l],mtreino[j][m]);
-							contas[i][j] = aux + min(contas[i-1][j],min(contas[i][j-1],contas[i-1][j-1]));
+							contas[i][j] = aux + min(mconta[i-1][j],min(mconta[i][j-1],mconta[i-1][j-1]));
 						}
 					
 					
 				}
 			}
-
 			
-
-			//cout<<mteste.size()<<endl;
-
-			//for(i = 0; i < )
-
-			// percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
-			// determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
-			// o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
-			//retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
-			//de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
-/*
-			int x;
-			int y;
-/
-/
-			if(DTW[x-1][y-1] <= DTW[x-1][y] && DTW[x-1][y-1] <= DTW[x][y-1] ){
-				k= k + DTW[x-1][y-1];
-			}
-			if (DTW[x-1][y] <= DTW[x-1][y-1] && DTW[x-1][y] <= DTW[x][y-1]){
-				k = k + DTW[x-1][y]
-			}
-			else k = k + DTW[x][y-1];
-
+			/*
+						percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
+						determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
+						o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
+						retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
+						de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
 			*/
 
 
