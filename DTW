@@ -9,55 +9,43 @@
 
 using namespace std;
 
-int modulo(int x, int y);
+vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);    							//Função dtw, usa duas series de tempo para determinar o quão semelhantes são
 
-vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);
+float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas );										//Com os resultados de distâncias fornecidos pela dtw, esta função irá classificar as séries temporais em categorias específicas
 
-float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas );
-
-double Calc_Dist(float x, float y);
+double Calc_Dist(float x, float y);																						//Função de calculo de distância entre dois valores
 
 
 int main(){
 
-	ifstream file("treinoPA.txt");
+	ifstream file("treinoPA.txt");																						//Arquivo contendo o centúdo de treino, séries já classificadas utilizadas para comparar com as séries de entrada(teste)
 
-	int coluna = 0;
-	int linha = 0;
+	int coluna = 0;																										//Contador de colunas
+	int linha = 0;																										//Contador de linhas
 	float vet;
 
-  char k;
-	string cvet;
-	string::size_type sz = 0;
-	
-	
-
-	int colTreino[240][2]; // primeira coluna col treino a linha do arquivo
-												//segunda linha o numero de colunas nessa linha
-  	int contL1 = 0; //contador para linhas no for
-	int contL2 = 0;
-	int colTeste[960][2];
+  	char k;																												
+	string cvet;																										//Estrutura de string que receberá a leitura dos arquivos de texto
+	string::size_type sz = 0;		
 
 	vector <float> linhas;
-	vector<vector<float> > matriz;//matriz parcialmente dinamica criada
-																	//as linhas sao fixas e colunas variam
+	vector<vector<float> > matriz;																						//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
 	
 	if(file)
 	{
-		while(getline(file,cvet))   //função para obter uma linha
+		while(getline(file,cvet))   																					//função para obter uma linha em formato string
 		{
 
-			vector<float> aux;		//vetor aux para salvar linhas inteiras
-														//e passar para a matriz
-			for(int i = 0; i < cvet.size();i++) // for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
+			vector<float> aux;																							//vetor aux para salvar linhas inteiras e passar para a matriz
+			for(int i = 0; i < cvet.size();i++) 																		// for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
 			{
-					if(i == 0) 			//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
+					if(i == 0) 																							//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
 					{
 						sz = i;
 						vet = stof(cvet.substr(sz));
-						aux.push_back(vet);						//o elemento é passado para o vetor
+						aux.push_back(vet);																				//O elemento é adicionado para o vetor
 					}
-					if(cvet.at(i) == ' ')   //outro elemento
+					if(cvet.at(i) == ' ')   																			//Identifica o próximo elemento a partir daa separação pelo caractere espaço
 					{
 							sz = i;
 							//cout<<sz<<"|"<<endl;
@@ -66,16 +54,11 @@ int main(){
 							aux.push_back(vet);
 					}
 			}
-
-			colTreino[contL1][0] = contL1;
-			colTreino[contL1][1] = coluna;
-			contL1++;
-			matriz.push_back(aux);						//é passado o vetor para a Matriz
-			aux.erase(aux.begin(),aux.end());			//o vetor auz é limpo para liberar o espaço na memória
-			linha++;									//fim de um ciclo => fim da linha
-			coluna = 0;								//começa-se uma nova linha e a coluna vai à zero
+			matriz.push_back(aux);																						//Adiciona o vetor de float criado na matriz
+			aux.erase(aux.begin(),aux.end());																			//O vetor aux é limpo para liberar o espaço na memória
+			linha++;																									//fim de um ciclo => fim da linha
+			coluna = 0;																									//começa-se uma nova linha e a coluna vai à zero
 		}
-		//cout<<linha<<endl;     //240 linhas
 	}
 	
 	/*
@@ -88,24 +71,21 @@ int main(){
 	coluna = 0;
 	linha = 0;
 
-	//vector <float> linhas;
-	vector<vector<float> > matriz2;//matriz parcialmente dinamica criada
-																	//as linhas sao fixas e colunas variam
+	vector<vector<float> > matriz2;																						//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
 	if(file2)
 	{
-		while(getline(file2,cvet))   //função para obter uma linha
+		while(getline(file2,cvet))   																					//função para obter uma linha em formato string
 		{
-			vector<float> aux;		//vetor aux para salvar linhas inteiras
-														//e passar para a matriz
-			for(int i = 0; i < cvet.size();i++) // for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
+			vector<float> aux;																							//vetor aux para salvar linhas inteiras e passar para a matriz
+			for(int i = 0; i < cvet.size();i++) 																		// for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
 			{
-					if(i == 0) 			//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
+					if(i == 0) 																							//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz
 					{
 						sz = i;
 						vet = stof(cvet.substr(sz));
-						aux.push_back(vet);						//o elemento é passado para o vetor
+						aux.push_back(vet);																				//O elemento é adicionado no vetor
 					}
-					if(cvet.at(i) == ' ')   //outro elemento
+					if(cvet.at(i) == ' ')   																			//Identifica o próximo elemento a partir daa separação pelo caractere espaço
 					{
 							sz = i;
 							//cout<<sz<<"|"<<endl;
@@ -115,17 +95,11 @@ int main(){
 					}
 			}
 
-			colTeste[contL2][0] = contL2;
-			colTeste[contL2][1] = coluna;
-			contL2++;
-
-			matriz2.push_back(aux);						//é passado o vetor para a Matriz
-			aux.erase(aux.begin(),aux.end());			//o vetor auz é limpo para liberar o espaço na memória
-			linha++;									//fim de um ciclo => fim da linha
-			coluna = 0;								//começa-se uma nova linha e a coluna vai à zero
+			matriz2.push_back(aux);																						//Adiciona o vetor de float criado na matriz
+			aux.erase(aux.begin(),aux.end());																			//O vetor aux é limpo para liberar o espaço na memória
+			linha++;																									//fim de um ciclo => fim da linha
+			coluna = 0;																									//começa-se uma nova linha e a coluna vai à zero
 		}
-		//cout<<linha<<endl;  //960 linhas
-
 	}
 
 	float resposta[matriz.size()][matriz2.size()];
@@ -133,7 +107,7 @@ int main(){
 	float acert;
 	vector<float> respostas;
 
-	for(int p=0; p<960;p++ ){
+	for(int p = 0;p<960;p++ ){
 		respostas.push_back(p);
 		//cout<<vetorx[p]<<endl;
 	}
@@ -153,17 +127,6 @@ int main(){
 	return 0;
 }
 
-int modulo(int x, int y){
-  int mod;
-  if ( x>y){
-    mod = x - y;
-  }
-
-  else mod = y - x;
-
-  return mod;
-}
-
 
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float> >& mteste)
@@ -171,8 +134,8 @@ vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float>
 	 		vector<vector<float> > contas(mteste.size()-1);
 			
 			double aux; //repassa os valores para a DTW
-			contas[0].resize(mtreino.size()-1);
-			for(int k = 1; k < mteste.size()-1;k++)
+
+			for(int k = 0; k < mteste.size()-1;k++)
 			{
 				//cout<<k<<"size:"<<mtreino.size()-1<<endl;
 				contas[k].resize(mtreino.size()-1);
