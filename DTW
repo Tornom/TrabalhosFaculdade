@@ -102,14 +102,14 @@ int main(){
 		}
 	}
 
-	vector<vector<float> > distancia(matriz_teste.size());
+	vector<vector<float> > distancia(matriz_treino.size());
 
-	for(int k; k < matriz_teste.size();k++)
+	for(int k; k < matriz_treino.size();k++)
  	{
-	 	distancia[k].resize(matriz_treino.size());
+	 	distancia[k].resize(matriz_teste.size());
  	}
 	
- 	distancia = DTW(matriz_teste,matriz_treino);
+ 	distancia = DTW(matriz_treino,matriz_teste);
  	vector<vector<float> > copia_dist;
  	copia_dist = distancia;
  	
@@ -134,63 +134,65 @@ int main(){
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float> >& mteste)
  {
-	 		vector<vector<float> > contas(mteste.size());												//Cria uma matriz para retornar os resultados das comparações do DTW
-			
-			double aux;				 																	//Repassa os valores de um elemento para a matriz de respostas
-
-			for(int k = 0; k < mteste.size();k++)														//Cria a matriz de tamanhom teste.size por mtreino.size,ou seja a quantia de linhas de teste e de treino formam o tamanho da matriz de resposta
+	vector<vector<float> > contas(mteste.size());												//Cria uma matriz para retornar os resultados das comparações do DTW
+	
+	double aux;				 																	//Repassa os valores de um elemento para a matriz de respostas
+	
+	for(int k = 0; k < mteste.size();k++)														//Cria a matriz de tamanhom teste.size por mtreino.size,ou seja a quantia de linhas de teste e de treino formam o tamanho da matriz de resposta
+	{
+		contas[k].resize(mtreino.size());
+	}       
+	
+//	cout<<"["<<mteste.size()<<"]["<<mtreino.size()<<"]"<<endl;
+	
+	int i,j;																					//Auxiliares para o for
+	for(i = 0;i < mteste.size();i++)															//For que percorre todas as linhas do arquivo de teste
+	{
+		for(j = 0;j < mtreino.size();j++)														//For que percorre todas as linhas do arquivo de treino
+		{
+			vector<vector<float> > mconta(mteste[i].size()-1);									//Cria a matriz para realizar os cálculos do DTW, de tamanho formado pelas colunas das matrizes de teste e de treino
+			for(int a = 0;a < mteste[i].size()-1;a++)
 			{
-				contas[k].resize(mtreino.size());
+				mconta[a].resize(mtreino[j].size()-1);
 			}
 			
-			int i,j;																					//Auxiliares para o for
-			for(i = 0;i < mteste.size();i++)															//For que percorre todas as linhas do arquivo de teste
+			for(int l = 0;l < mteste[i].size()-1;l++)											//Inicia o processo do cálculo do DTW, colocando infinito em todos os elementos iniciais da matriz
 			{
-				for(j = 0;j < mtreino.size();j++)														//For que percorre todas as linhas do arquivo de treino
+				mconta[l][0] = numeric_limits<double>::infinity();
+			}
+			
+			for(int m = 0;m < mtreino[j].size()-1;m++)
+			{
+				mconta[0][m] = numeric_limits<double>::infinity();
+			}
+			
+			mconta[0][0] = 0;																	//Coloca o valor 0 como primeiro membro da matriz, para dar inicio ao processo de cálculo do DTW
+			
+			for(int l = 1;l < mteste[i].size()-1;l++)											//Preenche a matriz de "colunas 1 e 2", utilizando a lógica de cálculo de distância para o DTW 
+				for(int m = 1;m < mtreino[j].size()-1;m++)
 				{
-					vector<vector<float> > mconta(mteste[i].size()-1);									//Cria a matriz para realizar os cálculos do DTW, de tamanho formado pelas colunas das matrizes de teste e de treino
-					for(int a = 0;a < mteste[i].size()-1;a++)
-					{
-						mconta[a].resize(mtreino[j].size()-1);
-					}
-					
-					for(int l = 0;l < mteste[i].size()-1;l++)											//Inicia o processo do cálculo do DTW, colocando infinito em todos os elementos iniciais da matriz
-					{
-						mconta[l][0] = numeric_limits<double>::infinity();
-					}
-					
-					for(int m = 0;m < mtreino[j].size()-1;m++)
-					{
-						mconta[0][m] = numeric_limits<double>::infinity();
-					}
-					
-					mconta[0][0] = 0;																	//Coloca o valor 0 como primeiro membro da matriz, para dar inicio ao processo de cálculo do DTW
-					
-					for(int l = 1;l < mteste[i].size()-1;l++)											//Preenche a matriz de "colunas 1 e 2", utilizando a lógica de cálculo de distância para o DTW 
-						for(int m = 1;m < mtreino[j].size()-1;m++)
-						{
-							aux = Calc_Dist(mteste[i][l],mtreino[j][m]);
-							float valor = min(mconta[l-1][m],min(mconta[l][m-1],mconta[l-1][m-1]));
-							mconta[l][m] = aux + valor;
-						}
-
-					int lin,col;																	
-					lin = mconta.size()-1;																// Por fim coloca o ultimo valor da matriz de distância na matriz de resposta, este valor reprezenta a comparação entre as duas séries de posições
-					col = mtreino[j].size()-2;
-					contas[i][j] = mconta[lin][col];
+					aux = Calc_Dist(mteste[i][l],mtreino[j][m]);
+					float valor = min(mconta[l-1][m],min(mconta[l][m-1],mconta[l-1][m-1]));
+					mconta[l][m] = aux + valor;
 				}
-			}
-			
-			/*
-						percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
-						determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
-						o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
-						retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
-						de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
-			*/
+
+			int lin,col;																	
+			lin = mconta.size()-1;																// Por fim coloca o ultimo valor da matriz de distância na matriz de resposta, este valor reprezenta a comparação entre as duas séries de posições
+			col = mtreino[j].size()-2;
+			contas[i][j] = mconta[lin][col];
+		}
+	}
+	
+	/*
+				percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
+				determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
+				o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
+				retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
+				de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
+	*/
 
 
-			return contas;
+	return contas;
  }
 
 double Calc_Dist(float x, float y)																		//Fução que calcula a distância entre dois elementos fornecidos
@@ -219,7 +221,6 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 	
 	for(int j = 0;j < resultados.size();j++)
 	{
-		
 		int voto_atual;
 		int vetor_votos[12];
 		for(int o = 0;o < 12;o++)
@@ -230,17 +231,16 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 			float aux = resultados[j][l];
 			for(int m = 0;m < resultados[j].size();m++)
 			{
-				cout<<j<<" | "<<m<<endl;
+				
 				if(aux == comparado[j][m])
 				{
 					int valor = treino[m][0];
-					vetor_votos[valor]++;
+					vetor_votos[valor-1]++;
 					//busca qual rótulo a linha em questão possui;
 				}
-				cout<<j<<" | "<<m<<endl;
+				
 			}
 		}
-		cout<<j<<endl;
 		voto_atual = vetor_votos[0];
 		for(int n = 1; n < 12;n++)
 		{
@@ -256,7 +256,7 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 		}
 		votos.push_back(voto_atual);
 	}
-	cout<<"ola"<<endl;
+	for(int y = 0; y < votos.size();y++)
 	return votos;
 }
 	//ordenar e comparar os mais proximos da serie
