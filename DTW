@@ -6,9 +6,11 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
-
+#include <chrono>
 
 using namespace std;
+
+typedef std::chrono::high_resolution_clock Clock;
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);    							//Função dtw, usa duas series de tempo para determinar o quão semelhantes são
 
@@ -22,6 +24,9 @@ int main(){
 
 	ifstream file("treinoPA.txt");																						//Arquivo contendo o centúdo de treino, séries já classificadas utilizadas para comparar com as séries de entrada(teste)
 
+	auto x = Clock::now();
+	cout<<"ola"<<endl;
+	
 	int coluna = 0;																										//Contador de colunas
 	int linha = 0;																										//Contador de linhas
 	float vet;
@@ -30,13 +35,12 @@ int main(){
 	string::size_type sz = 0;		
 
 	vector <float> linhas;
-	vector<vector<float> > matriz_treino;																						//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
+	vector<vector<float> > matriz_treino;																				//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
 	
 	if(file)
 	{
 		while(getline(file,cvet))   																					//função para obter uma linha em formato string
 		{
-
 			vector<float> aux;																							//vetor aux para salvar linhas inteiras e passar para a matriz
 			for(int i = 0; i < cvet.size();i++) 																		// for que percorrerá todos os elementos da linha(char) para ler e separar os valores armazenados
 			{
@@ -49,29 +53,31 @@ int main(){
 					if(cvet.at(i) == ' ')   																			//Identifica o próximo elemento a partir daa separação pelo caractere espaço
 					{
 							sz = i;
-							coluna++;
-							vet = stof(cvet.substr(sz));
-							aux.push_back(vet);
+							coluna++;																					//incrementa o contador de colunas para registar o novo elemento
+							vet = stof(cvet.substr(sz));																//converte o valor recebido de string para float
+							aux.push_back(vet);																			//salva o valor lido no valor auxiliar
 					}
 			}
-			matriz_treino.push_back(aux);																						//Adiciona o vetor de float criado na matriz
+			auto y = Clock::now();
+	
+	cout<<chrono::duration_cast<chrono::nanoseconds>(y - x).count()<<endl;
+			matriz_treino.push_back(aux);																				//Adiciona o vetor de float criado na matriz
 			aux.erase(aux.begin(),aux.end());																			//O vetor aux é limpo para liberar o espaço na memória
 			linha++;																									//fim de um ciclo => fim da linha
 			coluna = 0;																									//começa-se uma nova linha e a coluna vai à zero
 		}
 	}
-	
 	/*
 		tem-se a matriz_treino de treinos
 		pegar matriz de teste
 	*/
-
+	
 	ifstream file2("teste.txt");
 
-	coluna = 0;
-	linha = 0;
+	coluna = 0;																											//contador de colunas
+	linha = 0;																											//contador de linhas
 
-	vector<vector<float> > matriz_teste;																						//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
+	vector<vector<float> > matriz_teste;																				//Estrutura de vetor criada para armazenar os valores recuperados dos arquivos
 	if(file2)
 	{
 		while(getline(file2,cvet))   																					//função para obter uma linha em formato string
@@ -88,43 +94,39 @@ int main(){
 					if(cvet.at(i) == ' ')   																			//Identifica o próximo elemento a partir daa separação pelo caractere espaço
 					{
 							sz = i;
-							coluna++;
-							vet = stof(cvet.substr(sz));
-							aux.push_back(vet);
+							coluna++;																					//incrementa o contador de colunas para registar o novo elemento
+							vet = stof(cvet.substr(sz));																//converte o valor recebido de string para float
+							aux.push_back(vet);																			//salva o valor lido no valor auxiliar
 					}
 			}
-
-			matriz_teste.push_back(aux);																						//Adiciona o vetor de float criado na matriz
+			matriz_teste.push_back(aux);																				//Adiciona o vetor de float criado na matriz
 			aux.erase(aux.begin(),aux.end());																			//O vetor aux é limpo para liberar o espaço na memória
 			linha++;																									//fim de um ciclo => fim da linha
 			coluna = 0;																									//começa-se uma nova linha e a coluna vai à zero
 		}
 	}
 
-	vector<vector<float> > distancia(matriz_treino.size());
+	vector<vector<float> > distancia(matriz_treino.size());																//matriz que recebe as distancias retornadas pelo DTW														
 
 	for(int k; k < matriz_treino.size();k++)
  	{
-	 	distancia[k].resize(matriz_teste.size());
+	 	distancia[k].resize(matriz_teste.size());				
  	}
 	
- 	distancia = DTW(matriz_treino,matriz_teste);
- 	vector<vector<float> > copia_dist;
+ 	distancia = DTW(matriz_treino,matriz_teste);																		//Chama a função DTW para calcular os valores de distância entre os arquivos texte e treino																		
+ 	vector<vector<float> > copia_dist;																					//cria uma copia dos valores de distancia para guardar as posições originais dos valores
  	copia_dist = distancia;
  	
  	for(int l = 0; l < distancia.size();l++)
  	{
- 		sort(distancia[l].begin(),distancia[l].begin() + distancia[l].size());
+ 		sort(distancia[l].begin(),distancia[l].begin() + distancia[l].size());											//Organiza os vetores em ordem crescente
 	}
-	
-	vector<int> respostas;
-	
-	respostas = KNN(distancia,copia_dist,matriz_treino,1);
 
-	float acert;
-	
- 	acert = acertividade(matriz_teste, respostas);
- 	cout<<endl<<"Acertividade:"<<acert<<"%"<<endl;
+	vector<int> respostas;
+	respostas = KNN(distancia,copia_dist,matriz_treino,2);																//Executa o KNN classificando os valores de testes
+	float acert;																										
+ 	acert = acertividade(matriz_teste, respostas);																		//Função que calcula a taxa de acerto do algoritmo DTW + KNN
+ 	cout<<endl<<"Acertividade:"<<acert<<"%"<<endl;											
 
 	return 0;
 }
@@ -134,7 +136,6 @@ vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float>
 	vector<vector<float> > contas(mteste.size());												//Cria uma matriz para retornar os resultados das comparações do DTW
 	
 	double aux;				 																	//Repassa os valores de um elemento para a matriz de respostas
-	
 	for(int k = 0; k < mteste.size();k++)														//Cria a matriz de tamanhom teste.size por mtreino.size,ou seja a quantia de linhas de teste e de treino formam o tamanho da matriz de resposta
 	{
 		contas[k].resize(mtreino.size());
@@ -156,7 +157,7 @@ vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float>
 				mconta[l][0] = numeric_limits<double>::infinity();
 			}
 			
-			for(int m = 0;m < mtreino[j].size()-1;m++)
+			for(int m = 0;m < mtreino[j].size()-1;m++)											//Coloca valores infinitos como distancias laterais para calculo do DTW
 			{
 				mconta[0][m] = numeric_limits<double>::infinity();
 			}
@@ -164,35 +165,26 @@ vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float>
 			mconta[0][0] = 0;																	//Coloca o valor 0 como primeiro membro da matriz, para dar inicio ao processo de cálculo do DTW
 			
 			for(int l = 1;l < mteste[i].size()-1;l++)											//Preenche a matriz de "colunas 1 e 2", utilizando a lógica de cálculo de distância para o DTW 
+			{
 				for(int m = 1;m < mtreino[j].size()-1;m++)
 				{
-					aux = Calc_Dist(mteste[i][l],mtreino[j][m]);
+					aux = Calc_Dist(mteste[i][l],mtreino[j][m]);								//Calcula a distância entre o elemento do vetor de teste e os elemntos de treino, para encontrar o menor valor
 					float valor = min(mconta[l-1][m],min(mconta[l][m-1],mconta[l-1][m-1]));
 					mconta[l][m] = aux + valor;
 				}
-
+			}
 			int lin,col;																	
 			lin = mconta.size()-1;																// Por fim coloca o ultimo valor da matriz de distância na matriz de resposta, este valor reprezenta a comparação entre as duas séries de posições
 			col = mtreino[j].size()-2;
 			contas[i][j] = mconta[lin][col];
 		}
 	}
-	
-	/*
-				percorrer metreino, entrar nas linhas e percorrer cada linha comparando com cada linha da matriz de teste,
-				determinando qual a matriz de saida resultante da operação após todas as comparações serem realizadas
-				o algoritmo pega as varias matrizes reunidas ou antes de reuni-las para nao formar uma matris tridimensional
-				retorna um valor do qual será o representante de cada matriz, esse valor será então levado para o algoritmo
-				de catalogação onde de acordo com regras pré-estabelecidas será determinado o tipo de movimentouuuuu
-	*/
-
-
 	return contas;
  }
 
 double Calc_Dist(float x, float y)																		//Fução que calcula a distância entre dois elementos fornecidos
 {
-	double z = sqrt(abs((x*x)-(y*y)));
+	double z = abs(x-y);
 	return z;
 }
 
@@ -206,7 +198,7 @@ float acertividade(vector<vector<float> > mrotulos, vector<int> respostas ){				
 				cont++;
 			}
 		}
-		float acert = cont*100.0/960.0;																		//Transforma a taxa de acertos em porcentagem
+		float acert = cont*100.0/960.0;																	//Transforma a taxa de acertos em porcentagem
 		return acert;
 }
 
@@ -224,13 +216,12 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 			vetor_votos[o] = 0;
 		}
 		
-		
 		for(int l = 0;l < k;l++)
 		{
 			float aux = resultados[j][l];
 			for(int m = 0;m < comparado[j].size();m++)
 			{
-				if(aux == comparado[j][m])
+				if(aux == comparado[j][m]) 																//busca qual rótulo a linha em questão possui;
 				{
 					int valor = treino[m][0];
 					vetor_votos[valor-1]++;
@@ -239,7 +230,7 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 						desempate = valor;
 					}
 					break;
-					//busca qual rótulo a linha em questão possui;
+				
 				}
 			}
 		}
