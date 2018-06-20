@@ -12,7 +12,7 @@ using namespace std;
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);    							//Função dtw, usa duas series de tempo para determinar o quão semelhantes são
 
-float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas );										//Com os resultados de distâncias fornecidos pela dtw, esta função irá classificar as séries temporais em categorias específicas
+float acertividade(vector<vector<float> > mrotulos, vector<int> respostas );										//Com os resultados de distâncias fornecidos pela dtw, esta função irá classificar as séries temporais em categorias específicas
 
 double Calc_Dist(float x, float y);																						//Função de calculo de distância entre dois valores
 
@@ -49,7 +49,6 @@ int main(){
 					if(cvet.at(i) == ' ')   																			//Identifica o próximo elemento a partir daa separação pelo caractere espaço
 					{
 							sz = i;
-							//cout<<sz<<"|"<<endl;
 							coluna++;
 							vet = stof(cvet.substr(sz));
 							aux.push_back(vet);
@@ -121,16 +120,14 @@ int main(){
 	vector<int> respostas;
 	
 	respostas = KNN(distancia,copia_dist,matriz_treino,1);
-	
+
 	float acert;
 	
- 	//acert = acertividade(matriz_teste, respostas);
+ 	acert = acertividade(matriz_teste, respostas);
  	cout<<endl<<"Acertividade:"<<acert<<"%"<<endl;
 
 	return 0;
 }
-
-
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float> >& mteste)
  {
@@ -142,8 +139,6 @@ vector<vector<float> > DTW(vector<vector<float> >& mtreino ,vector<vector<float>
 	{
 		contas[k].resize(mtreino.size());
 	}       
-	
-//	cout<<"["<<mteste.size()<<"]["<<mtreino.size()<<"]"<<endl;
 	
 	int i,j;																					//Auxiliares para o for
 	for(i = 0;i < mteste.size();i++)															//For que percorre todas as linhas do arquivo de teste
@@ -201,9 +196,9 @@ double Calc_Dist(float x, float y)																		//Fução que calcula a dist
 	return z;
 }
 
-float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas ){						//Função para o cálculo da taxa de acertos do programa
+float acertividade(vector<vector<float> > mrotulos, vector<int> respostas ){							//Função para o cálculo da taxa de acertos do programa
 
-		int cont=0;
+		int cont = 0;
 		int i;
 
 		for(i=0; i<960; i++){
@@ -211,7 +206,7 @@ float acertividade(vector<vector<float> >& mrotulos, vector<float>& respostas ){
 				cont++;
 			}
 		}
-		float acert=cont*100/960;																		//Transforma a taxa de acertos em porcentagem
+		float acert = cont*100.0/960.0;																		//Transforma a taxa de acertos em porcentagem
 		return acert;
 }
 
@@ -222,41 +217,58 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 	for(int j = 0;j < resultados.size();j++)
 	{
 		int voto_atual;
+		int desempate;
 		int vetor_votos[12];
 		for(int o = 0;o < 12;o++)
-		vetor_votos[o] = 0;
+		{
+			vetor_votos[o] = 0;
+		}
+		
 		
 		for(int l = 0;l < k;l++)
 		{
 			float aux = resultados[j][l];
-			for(int m = 0;m < resultados[j].size();m++)
+			for(int m = 0;m < comparado[j].size();m++)
 			{
-				
 				if(aux == comparado[j][m])
 				{
 					int valor = treino[m][0];
 					vetor_votos[valor-1]++;
+					if(l == 0)
+					{
+						desempate = valor;
+					}
+					break;
 					//busca qual rótulo a linha em questão possui;
 				}
-				
 			}
 		}
+		
 		voto_atual = vetor_votos[0];
+		int indice[12],numero_auxiliar = 0;
 		for(int n = 1; n < 12;n++)
 		{
 			if(vetor_votos[n]>voto_atual)
 			{
+				numero_auxiliar = 0;
 				voto_atual = vetor_votos[n];
+				indice[numero_auxiliar] = n + 1;
 			}
 			
-			if(vetor_votos[n] == voto_atual)
+			else if(vetor_votos[n] == voto_atual && voto_atual!=0)
 			{
-				//cout<<"empate"<<endl;     //No caso de empate um algoritmo determina o vencedor
+				numero_auxiliar++;
+				indice[numero_auxiliar] = n + 1;     //No caso de empate um algoritmo determina o vencedor
 			}
 		}
-		votos.push_back(voto_atual);
+		if(numero_auxiliar!=0)
+		{
+			votos.push_back(desempate);
+		}
+		else 
+		{
+			votos.push_back(indice[0]);
+		}
 	}
-	for(int y = 0; y < votos.size();y++)
 	return votos;
-}
-	//ordenar e comparar os mais proximos da serie
+}	//ordenar e comparar os mais proximos da serie
