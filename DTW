@@ -23,9 +23,6 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 int main(){
 
 	ifstream file("treinoPA.txt");																						//Arquivo contendo o centúdo de treino, séries já classificadas utilizadas para comparar com as séries de entrada(teste)
-
-	auto x = Clock::now();
-	cout<<"ola"<<endl;
 	
 	int coluna = 0;																										//Contador de colunas
 	int linha = 0;																										//Contador de linhas
@@ -46,7 +43,7 @@ int main(){
 			{
 					if(i == 0) 																							//caso seja o primeiro elemento o valor de classificação é salvo nas primeiras colunas da matriz_treino
 					{
-						sz = i;
+						sz = i;														
 						vet = stof(cvet.substr(sz));
 						aux.push_back(vet);																				//O elemento é adicionado para o vetor
 					}
@@ -58,9 +55,6 @@ int main(){
 							aux.push_back(vet);																			//salva o valor lido no valor auxiliar
 					}
 			}
-			auto y = Clock::now();
-	
-	cout<<chrono::duration_cast<chrono::nanoseconds>(y - x).count()<<endl;
 			matriz_treino.push_back(aux);																				//Adiciona o vetor de float criado na matriz
 			aux.erase(aux.begin(),aux.end());																			//O vetor aux é limpo para liberar o espaço na memória
 			linha++;																									//fim de um ciclo => fim da linha
@@ -113,20 +107,39 @@ int main(){
 	 	distancia[k].resize(matriz_teste.size());				
  	}
 	
+	auto Tdtw1 = Clock::now();
  	distancia = DTW(matriz_treino,matriz_teste);																		//Chama a função DTW para calcular os valores de distância entre os arquivos texte e treino																		
+ 	auto Tdtw2 = Clock::now();
+	cout<<"Tempo Rotinas DTW:"<<chrono::duration_cast<chrono::nanoseconds>(Tdtw2 - Tdtw1).count()/1000000000.0<<endl;
  	vector<vector<float> > copia_dist;																					//cria uma copia dos valores de distancia para guardar as posições originais dos valores
  	copia_dist = distancia;
  	
+ 	
+ 	auto Tsort1 = Clock::now();
  	for(int l = 0; l < distancia.size();l++)
  	{
  		sort(distancia[l].begin(),distancia[l].begin() + distancia[l].size());											//Organiza os vetores em ordem crescente
 	}
+	auto Tsort2 = Clock::now();
+	cout<<"Tempo Rotinas Sort:"<<chrono::duration_cast<chrono::nanoseconds>(Tsort2 - Tsort1).count()/1000000000.0<<endl;
 
 	vector<int> respostas;
-	respostas = KNN(distancia,copia_dist,matriz_treino,2);																//Executa o KNN classificando os valores de testes
-	float acert;																										
- 	acert = acertividade(matriz_teste, respostas);																		//Função que calcula a taxa de acerto do algoritmo DTW + KNN
- 	cout<<endl<<"Acertividade:"<<acert<<"%"<<endl;											
+	
+	int valores_array[] = {1,3,5,10,20};																				//Vetor para rodar os valores especificados de K
+	float acert;
+	for(int h = 0; h < 5; h++)
+	{
+		auto Tknn1 = Clock::now();
+		cout<<" "<<fflush;
+		respostas = KNN(distancia,copia_dist,matriz_treino,valores_array[h]);																//Executa o KNN classificando os valores de testes
+		auto Tknn2 = Clock::now();
+		cout<<"Tempo Rotinas Knn "<<valores_array[h]<<" : "<<chrono::duration_cast<chrono::nanoseconds>(Tknn2 - Tknn1).count()<<endl;
+		acert = acertividade(matriz_teste, respostas);																		//Função que calcula a taxa de acerto do algoritmo DTW + KNN
+ 		cout<<"Acertividade:"<<acert<<"%"<<endl<<endl;
+	}
+	
+																											
+ 												
 
 	return 0;
 }
@@ -202,30 +215,30 @@ float acertividade(vector<vector<float> > mrotulos, vector<int> respostas ){				
 		return acert;
 }
 
-vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > comparado,vector<vector<float> > treino,int k)
+vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > comparado,vector<vector<float> > treino,int k)	//Função que classifica as séries temporais de acordo com a distância recebida do DTW
 {
-	vector<int> votos;
+	vector<int> votos;																					//Vetor que retorna os votos compilados pelo KNN
 	
-	for(int j = 0;j < resultados.size();j++)
+	for(int j = 0;j < resultados.size();j++)															//Loop que engloba todos os valores da coluna de resultados
 	{
 		int voto_atual;
-		int desempate;
+		int desempate;																					//Variavel que no caso de empate guardará qual valor deve ser adotado
 		int vetor_votos[12];
 		for(int o = 0;o < 12;o++)
 		{
 			vetor_votos[o] = 0;
 		}
 		
-		for(int l = 0;l < k;l++)
+		for(int l = 0;l < k;l++)																		//For que acumula os melhores classificados dependo do numero K especificado
 		{
-			float aux = resultados[j][l];
+			float aux = resultados[j][l];																//Guarda o menor valor atual no auxiliar para encontrar qual indice pertence essa informação
 			for(int m = 0;m < comparado[j].size();m++)
 			{
 				if(aux == comparado[j][m]) 																//busca qual rótulo a linha em questão possui;
 				{
 					int valor = treino[m][0];
 					vetor_votos[valor-1]++;
-					if(l == 0)
+					if(l == 0)																			//No caso de um empate o valor adotado será o menor valor encontrado pela função DTW
 					{
 						desempate = valor;
 					}
@@ -235,30 +248,30 @@ vector<int> KNN(vector<vector<float> > resultados ,vector<vector<float> > compar
 			}
 		}
 		
-		voto_atual = vetor_votos[0];
+		voto_atual = vetor_votos[0];																	//Após compilar os votos, procura-se a maior quantia de votos
 		int indice[12],numero_auxiliar = 0;
 		for(int n = 1; n < 12;n++)
 		{
 			if(vetor_votos[n]>voto_atual)
 			{
 				numero_auxiliar = 0;
-				voto_atual = vetor_votos[n];
-				indice[numero_auxiliar] = n + 1;
+				voto_atual = vetor_votos[n];															
+				indice[numero_auxiliar] = n + 1;														//Salva o valor do indice encontrado atualmente para compara-lo como resultado, atualiza esse valor caso encontre um numero de votos maior
 			}
 			
-			else if(vetor_votos[n] == voto_atual && voto_atual!=0)
+			else if(vetor_votos[n] == voto_atual && voto_atual!=0)										//Quando encontrar um valor igual de votos(excluindo o 0), salva o empate em uma varialvel para uso futuro
 			{
 				numero_auxiliar++;
 				indice[numero_auxiliar] = n + 1;     //No caso de empate um algoritmo determina o vencedor
 			}
 		}
-		if(numero_auxiliar!=0)
+		if(numero_auxiliar!=0)																			//Se o numero auxiliar for diferente de 0, houve um empate, portanto o valor de desempate é adicionado
 		{
 			votos.push_back(desempate);
 		}
 		else 
 		{
-			votos.push_back(indice[0]);
+			votos.push_back(indice[0]);																	//Sem acontecer um empate o maior numero de votos define a classificação
 		}
 	}
 	return votos;
