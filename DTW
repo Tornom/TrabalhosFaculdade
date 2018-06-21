@@ -14,7 +14,7 @@ typedef std::chrono::high_resolution_clock Clock;
 
 vector<vector<float> > DTW(vector<vector<float> >& mtreino,vector<vector<float> >&mteste);    							//Função dtw, usa duas series de tempo para determinar o quão semelhantes são
 
-float acertividade(vector<vector<float> > mrotulos, vector<int> respostas );										//Com os resultados de distâncias fornecidos pela dtw, esta função irá classificar as séries temporais em categorias específicas
+float assertividade(vector<vector<float> > mrotulos, vector<int> respostas );										//Com os resultados de distâncias fornecidos pela dtw, esta função irá classificar as séries temporais em categorias específicas
 
 double Calc_Dist(float x, float y);																						//Função de calculo de distância entre dois valores
 
@@ -126,7 +126,7 @@ int main(){
 	vector<int> respostas;
 	
 	int valores_array[] = {1,3,5,10,20};																				//Vetor para rodar os valores especificados de K
-	float acert;
+	float correto;
 	for(int h = 0; h < 5; h++)
 	{
 		auto Tknn1 = Clock::now();
@@ -134,8 +134,8 @@ int main(){
 		respostas = KNN(distancia,copia_dist,matriz_treino,valores_array[h]);																//Executa o KNN classificando os valores de testes
 		auto Tknn2 = Clock::now();
 		cout<<"Tempo Rotinas Knn "<<valores_array[h]<<" : "<<chrono::duration_cast<chrono::nanoseconds>(Tknn2 - Tknn1).count()<<endl;
-		acert = acertividade(matriz_teste, respostas);																		//Função que calcula a taxa de acerto do algoritmo DTW + KNN
- 		cout<<"Acertividade:"<<acert<<"%"<<endl<<endl;
+		correto = assertividade(matriz_teste, respostas);																		//Função que calcula a taxa de acerto do algoritmo DTW + KNN
+ 		cout<<"Assertividade:"<<correto<<"%"<<endl<<endl;
 	}
 	
 																											
@@ -201,7 +201,7 @@ double Calc_Dist(float x, float y)																		//Fução que calcula a dist
 	return z;
 }
 
-float acertividade(vector<vector<float> > mrotulos, vector<int> respostas ){							//Função para o cálculo da taxa de acertos do programa
+float assertividade(vector<vector<float> > mrotulos, vector<int> respostas ){							//Função para o cálculo da taxa de acertos do programa
 
 		int cont = 0;
 		int i;
